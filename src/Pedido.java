@@ -12,6 +12,10 @@ public class Pedido {
         this.tempoPreparo = tempoPreparo;
     }
 
+    public Pedido() {
+
+    }
+
     public int getCodigo() {
         return codigo;
     }

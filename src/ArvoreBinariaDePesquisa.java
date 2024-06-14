@@ -1,10 +1,10 @@
 public class ArvoreBinariaDePesquisa {
     class Nodo {
-        int chave;
+        Pedido chave;
         Nodo esquerda;
         Nodo direita;
         Nodo pai;
-        public Nodo(int chave) {
+        public Nodo(Pedido chave) {
             this.chave = chave;
         }
     }
@@ -13,7 +13,7 @@ public class ArvoreBinariaDePesquisa {
     private String caminhoPreOrdem;
     private String caminhoPosOrdem;
     private String caminhoCentral;
-    public void adicionar(int chave) {
+    public void adicionar(Pedido chave) {
         Nodo n = new Nodo(chave);
         if(raiz==null) { //meu primeiro nodo, logo eh a raiz
             raiz = n;
@@ -23,7 +23,7 @@ public class ArvoreBinariaDePesquisa {
             Nodo paiDoAux = null;
             while(aux!=null) {
                 paiDoAux = aux;
-                if(chave <= aux.chave) {
+                if(chave.getInstante() <= aux.chave.getInstante()) {
                     aux = aux.esquerda; //qdo nao tiver filhos a esquerda o aux sera null
                     if(aux==null) { //achei o local para inserir
                         paiDoAux.esquerda = n;
@@ -39,7 +39,7 @@ public class ArvoreBinariaDePesquisa {
         }
         tamanho++;
     }
-    public void adicionar2(int chave) { //usando recursividade
+    public void adicionar2(Pedido chave) { //usando recursividade
         Nodo n = new Nodo(chave);
         if(raiz==null) {
             raiz = n;
@@ -50,7 +50,7 @@ public class ArvoreBinariaDePesquisa {
         tamanho++;
     }
     private void adicionarRecursivo(Nodo n, Nodo pai) {
-        if(n.chave<=pai.chave) {
+        if(n.chave.getInstante()<=pai.chave.getInstante()) {
             if(pai.esquerda==null) {
                 pai.esquerda = n;
                 n.pai = pai;
