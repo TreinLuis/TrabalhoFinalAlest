@@ -5,19 +5,21 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class Simulador {
-    Fila filaPedidos = new Fila();
+
     int instanteAtual = 0;
     int tempoTotal = 1;
     Scanner in = new Scanner(System.in);
     int maiorTempo = 0;
 
     String nome = "pedidos.csv";
+    Fila filaPedidos = carregarPedidos();
+
     ArvoreBinariaDePesquisa arvore = new ArvoreBinariaDePesquisa();
 
     public void executar(){
         carregarPedidos();
         menu();
-        pedidoMaisDemorados(filaPedidos);
+        pedidoMaisDemorados(carregarPedidos());
     }
     public void menu() {
         int opcao = 0;
@@ -29,41 +31,56 @@ public class Simulador {
         System.out.println(menu);
         opcao = in.nextInt();
         in.nextLine();
-        processarNaArvore(filaPedidos, opcao);
+        geraCsvCaminhamentoCentral(processarNaArvore(filaPedidos, opcao));
     }
 
+    public Fila carregarPedidos() {
+        Fila fila = new Fila();
 
-    public void carregarPedidos() {
+        boolean primeiraLinha = true;
+
         try (BufferedReader br = new BufferedReader(new FileReader(nome))) {
             String line;
             while ((line = br.readLine()) != null) {
-                String[] values = line.split(",");
-                int codigo = Integer.parseInt(values[0].trim());
-                String sabor = values[1].trim();
-                int instante = Integer.parseInt(values[2].trim());
-                int tempoPreparo = Integer.parseInt(values[3].trim());
-                tempoTotal += tempoPreparo;
-                if (tempoPreparo > maiorTempo) {
-                    maiorTempo = tempoPreparo;
+                if (primeiraLinha) {
+                    primeiraLinha = false;
+                    continue;
                 }
-                filaPedidos.enfileirar(new Pedido(codigo, sabor, instante, tempoPreparo));
+                String[] values = line.split(",");
+                if (values.length < 4) {
+                    System.err.println("Erro: Linha incompleta ignorada: " + line);
+                    continue;
+                }
+                try {
+                    int codigo = Integer.parseInt(values[0].trim());
+                    String sabor = values[1].trim();
+                    int instante = Integer.parseInt(values[2].trim());
+                    int tempoPreparo = Integer.parseInt(values[3].trim());
+
+                    tempoTotal += tempoPreparo;
+                    if (tempoPreparo > maiorTempo) {
+                        maiorTempo = tempoPreparo;
+                    }
+                    fila.enfileirar(new Pedido(codigo, sabor, instante, tempoPreparo));
+                } catch (NumberFormatException e) {
+                    System.err.println("Erro ao processar linha: " + line + ", " + e.getMessage());
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return fila;
     }
 
-    public ArvoreBinariaDePesquisa processarNaArvore(Fila filaPedidos, int opcao) {//Precisar ser implementado
+    public ArvoreBinariaDePesquisa processarNaArvore(Fila filaAux, int opcao) {//Precisar ser implementado
         String controlador;
         ArvoreBinariaDePesquisa processada = new ArvoreBinariaDePesquisa();
-        Fila fila = filaPedidos;
-        Pedido pedido = fila.desenfileirar();
+
         int tempo = 0;
         if(opcao == 2){
-            while (pedido != null) {
-                return processarAutomatizado(fila);
-            }
+            return processarAutomatizado(filaPedidos);
         } else {
+            Pedido pedido = filaAux.desenfileirar();
             while (pedido != null) {
                 System.out.println("Tempo atual: " + tempo);
                 // Processa o pedido conforme o tempo de preparo
@@ -73,29 +90,30 @@ public class Simulador {
                     tempo++;
                     // Verifica se o usuário deseja terminar de forma automática
                     if (controlador.equalsIgnoreCase("C")) {
-                        return processarAutomatizado(fila);
+                        return processarAutomatizado(filaPedidos);
                     }
                 }
                 // Adiciona o pedido à árvore após o tempo de preparo completo
                 processada.adicionar(pedido);
                 System.out.println("Pedido processado: " + pedido.getCodigo() + " - Tempo de preparo: " + pedido.getTempoPreparo());
                 // Obtém o próximo pedido da fila
-                pedido = fila.desenfileirar();
+                pedido = filaAux.desenfileirar();
             }
         }
+        arvore = processada;
         System.out.println(processada.getTamanho());
         return processada;
     }
 
-    public Fila pedidoMaisDemorados(Fila filaPedidos) {
+    public Fila pedidoMaisDemorados(Fila filaAux) {
         Fila pedidosMaisDemorados = new Fila();
-        Fila fila = filaPedidos;
+        System.out.println(filaAux.getTamanho());
         Pedido pedido = new Pedido();
         do {
             if (pedido.getTempoPreparo() == maiorTempo) {
                 pedidosMaisDemorados.enfileirar(pedido);
             }
-            pedido = fila.desenfileirar();
+            pedido = filaAux.desenfileirar();
         } while (pedido != null);
         System.out.println(pedidosMaisDemorados.toString());
         return pedidosMaisDemorados;
@@ -105,23 +123,30 @@ public class Simulador {
     public void geraCsvComSituacao(String nomeArquivo, Fila filaPedidos) {
 
     }
-
-    public void geraCsvCaminhamentoCentral() {
-
-    }
-    public ArvoreBinariaDePesquisa processarAutomatizado(Fila filaPedidos) {//precisamos melhor ainda vic
+    public ArvoreBinariaDePesquisa processarAutomatizado(Fila filaAux) {//precisamos melhor ainda vic
         ArvoreBinariaDePesquisa processada = new ArvoreBinariaDePesquisa();
-        Fila fila = filaPedidos;
-        Pedido pedido = fila.desenfileirar();
+        Pedido pedido = filaAux.desenfileirar();
         int tempo = 0;
         while (pedido != null) {
             tempo += pedido.getTempoPreparo(); // Avança o tempo de acordo com o tempo de preparo do pedido
             System.out.println("Pedido processado automaticamente: " + pedido.getCodigo() + " - Tempo de preparo: " + pedido.getTempoPreparo());
             processada.adicionar(pedido);
-            pedido = fila.desenfileirar(); // Obtém o próximo pedido
+            pedido = filaAux.desenfileirar(); // Obtém o próximo pedido
         }
         return processada;
     }
+    public void geraCsvCaminhamentoCentral(ArvoreBinariaDePesquisa aux) {
+        String nomeArquivo = "caminhamento_central.csv";
+
+        try (FileWriter writer = new FileWriter(nomeArquivo)) {
+            aux.ordemCentralCSV(writer);
+            System.out.println("Arquivo '" + nomeArquivo + "' gerado com sucesso!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
 }
 
