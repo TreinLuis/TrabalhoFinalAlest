@@ -9,12 +9,12 @@ public class Simulador {
     int tempoTotal = 1;
     Scanner in = new Scanner(System.in);
     int maiorTempo = 0;
-    String nome = "pedidos.txt";
+    String nome = "pedidos.csv";
+    ArvoreBinariaDePesquisa arvore = new ArvoreBinariaDePesquisa();
 
 
     public void menu() {
         int opcao = 0;
-        String teste;
         String menu = "Bem-vindo ao Simulador de Pedidos de Pizza!\n"+
                 "Escolha uma opção:\n"+
                 "1 - Executar passo a passo\n"+
@@ -22,7 +22,10 @@ public class Simulador {
                 "Opção: ";
         System.out.println(menu);
         opcao = in.nextInt();
-        teste = in.nextLine();
+        carregarPedidos();
+        pedidoMaisDemorados(filaPedidos);
+        processarNaArvore(filaPedidos);
+
 //        if(teste.equalsIgnoreCase("")) { isso para fazer o negocio do enter e do tempo
 //        }
     }
@@ -38,7 +41,7 @@ public class Simulador {
                 int instante = Integer.parseInt(values[2].trim());
                 int tempoPreparo = Integer.parseInt(values[3].trim());
                 tempoTotal += tempoPreparo;
-                if(tempoPreparo < maiorTempo) {
+                if(tempoPreparo > maiorTempo) {
                     maiorTempo = tempoPreparo;
                 }
                 filaPedidos.enfileirar(new Pedido(codigo, sabor, instante, tempoPreparo));
@@ -49,25 +52,40 @@ public class Simulador {
     }
 
 
+    public void processarNaArvoreContinuo(Fila filaPedidos) {//precisamos melhor ainda vic
+        Fila fila = filaPedidos;
+        Pedido pedido = filaPedidos.desenfileirar();
+        do {
+            arvore.adicionar(pedido);
 
+            pedido = fila.desenfileirar();
+        } while (pedido != null);
+        System.out.println(arvore.toString());
+    }
+    public void processarNaArvoreManual(Fila filaPedidos) {//Precisar ser implementado
+        Fila fila = filaPedidos;
+        Pedido pedido = filaPedidos.desenfileirar();
+        do {
+            arvore.adicionar(pedido);
 
-
-
-
-
-    public Fila pedidoMaisDemorado(){
-        Fila pedidosMaisDemorados = new Fila();
-        Pedido pedido = new Pedido();
-        while (pedido != null){
-            pedido = filaPedidos.desenfileirar();
-            if(pedido.getTempoPreparo() == maiorTempo){
-                pedidosMaisDemorados.enfileirar(pedido);
-            }
-        }
-        return pedidosMaisDemorados;
+            pedido = fila.desenfileirar();
+        } while (pedido != null);
+        System.out.println(arvore.toString());
     }
 
-
+    public Fila pedidoMaisDemorados(Fila filaPedidos) {
+        Fila pedidosMaisDemorados = new Fila();
+        Fila fila = filaPedidos;
+        Pedido pedido = new Pedido();
+        do {
+            if (pedido.getTempoPreparo() == maiorTempo) {
+                pedidosMaisDemorados.enfileirar(pedido);
+            }
+            pedido = fila.desenfileirar();
+        } while (pedido != null);
+        System.out.println(pedidosMaisDemorados.toString());
+        return pedidosMaisDemorados;
+    }
 
     public void geraCsvComSituacao(){
 
@@ -75,5 +93,4 @@ public class Simulador {
     public void geraCsvCaminhamentoCentral(){
 
     }
-
 }

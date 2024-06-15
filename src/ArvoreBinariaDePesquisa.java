@@ -23,6 +23,7 @@ public class ArvoreBinariaDePesquisa {
             Nodo paiDoAux = null;
             while(aux!=null) {
                 paiDoAux = aux;
+
                 if(chave.getInstante() <= aux.chave.getInstante()) {
                     aux = aux.esquerda; //qdo nao tiver filhos a esquerda o aux sera null
                     if(aux==null) { //achei o local para inserir

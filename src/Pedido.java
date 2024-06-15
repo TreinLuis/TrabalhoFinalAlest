@@ -47,4 +47,14 @@ public class Pedido {
     public void setTempoPreparo(int tempoPreparo) {
         this.tempoPreparo = tempoPreparo;
     }
+
+    @Override
+    public String toString() {
+        return "Pedido{" +
+                "codigo=" + codigo +
+                ", sabor='" + sabor + '\'' +
+                ", instante=" + instante +
+                ", tempoPreparo=" + tempoPreparo +
+                '}';
+    }
 }
