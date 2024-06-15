@@ -1,5 +1,7 @@
 
 public class Fila {
+
+
     class Nodo {
         Pedido item;
         Nodo proximo;
@@ -46,5 +48,24 @@ public class Fila {
             aux = aux.proximo;
         }
         return sb.toString();
+    }
+
+    public int getTamanho() {
+        return tamanho;
+    }
+    public Fila copiar() {
+        Fila novaFila = new Fila();
+        Nodo temp = inicio;
+        while (temp != null) {
+            novaFila.enfileirar(temp.item);
+            temp = temp.proximo;
+        }
+        return novaFila;
+    }
+    public boolean estaVazia(){
+        if(inicio==null) {
+            return true;
+        }
+        return false;
     }
 }
