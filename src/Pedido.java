@@ -1,9 +1,8 @@
 public class Pedido {
-
-        int codigo;
-        String sabor;
-        int instante;
-        int tempoPreparo;
+    private int codigo;
+    private String sabor;
+    private int instante;
+    private int tempoPreparo;
 
     public Pedido(int codigo, String sabor, int instante, int tempoPreparo) {
         this.codigo = codigo;
@@ -12,32 +11,16 @@ public class Pedido {
         this.tempoPreparo = tempoPreparo;
     }
 
-    public Pedido() {
-
-    }
-
     public int getCodigo() {
         return codigo;
-    }
-
-    public void setCodigo(int codigo) {
-        this.codigo = codigo;
     }
 
     public String getSabor() {
         return sabor;
     }
 
-    public void setSabor(String sabor) {
-        this.sabor = sabor;
-    }
-
     public int getInstante() {
         return instante;
-    }
-
-    public void setInstante(int instante) {
-        this.instante = instante;
     }
 
     public int getTempoPreparo() {
@@ -50,11 +33,6 @@ public class Pedido {
 
     @Override
     public String toString() {
-        return "Pedido{" +
-                "codigo=" + codigo +
-                ", sabor='" + sabor + '\'' +
-                ", instante=" + instante +
-                ", tempoPreparo=" + tempoPreparo +
-                '}';
+        return codigo + " - " + sabor;
     }
 }

@@ -1,58 +1,63 @@
-
 public class Fila {
-
-
     class Nodo {
         Pedido item;
         Nodo proximo;
+
         public Nodo(Pedido item) {
             this.item = item;
         }
     }
-    Nodo inicio;
-    Nodo fim;
-    int tamanho;
+
+    private Nodo inicio;
+    private Nodo fim;
+    private int tamanho;
+
     public Fila() {
-        tamanho = 0;
-        inicio = null;
-        fim = null;
+        this.tamanho = 0;
+        this.inicio = null;
+        this.fim = null;
     }
+
     public void enfileirar(Pedido item) {
-        Nodo n = new Nodo(item);
-        if(tamanho==0) {
-            inicio = n;
-            fim = n;
-        }
-        else {
-            fim.proximo = n;
-            fim = n;
+        Nodo novoNodo = new Nodo(item);
+        if (tamanho == 0) {
+            inicio = novoNodo;
+            fim = novoNodo;
+        } else {
+            fim.proximo = novoNodo;
+            fim = novoNodo;
         }
         tamanho++;
     }
+
     public Pedido desenfileirar() {
-        //tira da fila e retorna o valor string
-        Pedido item = null;
-        if(tamanho>0) { //se tiver elementos na fila
-            item = inicio.item; //esse valor que sera retornado
-            if(inicio.proximo!=null) inicio = inicio.proximo;
-            tamanho--;
+        if (tamanho == 0) {
+            return null;
+        }
+        Pedido item = inicio.item;
+        inicio = inicio.proximo;
+        tamanho--;
+        if (tamanho == 0) {
+            fim = null;
         }
         return item;
     }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         Nodo aux = inicio;
-        while(aux!=null) {
+        while (aux != null) {
             sb.append(aux.item).append(" ");
             aux = aux.proximo;
         }
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     public int getTamanho() {
         return tamanho;
     }
+
     public Fila copiar() {
         Fila novaFila = new Fila();
         Nodo temp = inicio;
@@ -62,10 +67,8 @@ public class Fila {
         }
         return novaFila;
     }
-    public boolean estaVazia(){
-        if(inicio==null) {
-            return true;
-        }
-        return false;
+
+    public boolean estaVazia() {
+        return tamanho == 0;
     }
 }
