@@ -1,184 +1,159 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Scanner;
 
 public class Simulador {
-    private int instanteAtual;
-    private int tempoTotal;
-    private int maiorTempo;
-    private Fila filaPedidos;
-    private ArvoreBinariaDePesquisa arvore;
-    private Scanner in;
+    private FilaDePedidos filaPedidos;
+    private Pedido pedidoAtual;
+    private int tempoAtual;
+    private ArvoreBinariaPesquisa abp;
+    private ListaDePedidos pedidos;
+    private ListaDePedidos logSimulacao;
+    private int totalTempoExecutado;
 
     public Simulador() {
-        this.instanteAtual = 0;
-        this.tempoTotal = 1;
-        this.maiorTempo = 0;
-        this.filaPedidos = new Fila();
-        this.arvore = new ArvoreBinariaDePesquisa();
-        this.in = new Scanner(System.in);
+        filaPedidos = new FilaDePedidos();
+        abp = new ArvoreBinariaPesquisa();
+        tempoAtual = 0;
+        logSimulacao = new ListaDePedidos();
+        totalTempoExecutado = 0;
     }
 
     public void executar() {
-        System.out.println("Digite o caminho do arquivo CSV de pedidos:");
-        String filePath = in.nextLine();
-        carregarPedidos(filePath);
-        menu();
-        pedidoMaisDemorados();
-    }
+        LeitorCSV leitorCSV = new LeitorCSV();
+        pedidos = leitorCSV.lerPedidos("pedidos_pizza_15.csv"); // Ajuste o caminho aqui
 
-    private void menu() {
-        System.out.println("Bem-vindo ao Simulador de Pedidos de Pizza!\n" +
-                "Escolha uma opção:\n" +
-                "1 - Executar passo a passo\n" +
-                "2 - Executar de forma contínua\n" +
-                "Opção: ");
-        int opcao = in.nextInt();
-        in.nextLine();
-        processarNaArvore(opcao);
-        geraCsvCaminhamentoCentral("caminhamento_central.csv");
-    }
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Digite 'C' para simulação contínua ou pressione <ENTER> para simulação passo a passo:");
 
-    private void carregarPedidos(String caminho) {
-        boolean primeiraLinha = true;
+        String input = scanner.nextLine();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(caminho))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (primeiraLinha) {
-                    primeiraLinha = false;
-                    continue;
-                }
-                String[] values = line.split(",");
-                if (values.length < 4) {
-                    System.err.println("Erro: Linha incompleta ignorada: " + line);
-                    continue;
-                }
-                try {
-                    int codigo = Integer.parseInt(values[0].trim());
-                    String sabor = values[1].trim();
-                    int instante = Integer.parseInt(values[2].trim());
-                    int tempoPreparo = Integer.parseInt(values[3].trim());
-
-                    tempoTotal += tempoPreparo;
-                    if (tempoPreparo > maiorTempo) {
-                        maiorTempo = tempoPreparo;
-                    }
-                    filaPedidos.enfileirar(new Pedido(codigo, sabor, instante, tempoPreparo));
-                } catch (NumberFormatException e) {
-                    System.err.println("Erro ao processar linha: " + line + ", " + e.getMessage());
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void processarNaArvore(int opcao) {
-        if (opcao == 2) {
-            processarAutomatizado();
+        if ("C".equalsIgnoreCase(input)) {
+            // Simulação contínua
+            simularContinuamente();
         } else {
-            processarPassoAPasso();
-        }
-    }
-
-    private void processarPassoAPasso() {
-        int tempo = 0;
-        Pedido pedido = filaPedidos.desenfileirar();
-
-        while (pedido != null) {
-            System.out.println("Tempo atual: " + tempo);
-            for (int i = 0; i < pedido.getTempoPreparo(); i++) {
-                System.out.println("Pressione <ENTER> para avançar uma unidade de tempo... (Tempo de preparo restante: " + (pedido.getTempoPreparo() - i) + ")");
-                String controlador = in.nextLine().trim();
-                tempo++;
-                if (controlador.equalsIgnoreCase("C")) {
-                    processarAutomatizado();
-                    return;
+            // Simulação passo a passo
+            while (!filaPedidos.estaVazia() || pedidoAtual != null || tempoAtual <= obterUltimoInstante(pedidos)) {
+                simularPasso();
+                System.out.println("Pressione <ENTER> para o próximo passo (instante de tempo = " + tempoAtual + ") ou digite 'S' para sair:");
+                input = scanner.nextLine();
+                if ("S".equalsIgnoreCase(input)) {
+                    break;
                 }
             }
-            arvore.adicionar(pedido);
-            System.out.println("Pedido processado: " + pedido.getCodigo() + " - Tempo de preparo: " + pedido.getTempoPreparo());
-            pedido = filaPedidos.desenfileirar();
         }
+
+        // Mostrar total de pedidos processados e tempo total executado
+        System.out.println("Total de pedidos processados: " + abp.contarNos());
+        System.out.println("Total de tempo executado: " + totalTempoExecutado);
+
+        // Encontrar o pedido mais demorado
+        Pedido pedidoMaisDemorado = encontrarPedidoMaisDemorado(pedidos);
+        if (pedidoMaisDemorado != null) {
+            System.out.println("Pedido mais demorado: " + pedidoMaisDemorado.getCodigo() + " - " + pedidoMaisDemorado.getSabor());
+        }
+
+        GeradorResultados geradorResultados = new GeradorResultados();
+        geradorResultados.gerarCSVSituacaoFila(logSimulacao, "situacao_da_fila.csv");
+        geradorResultados.gerarCSVABP(abp.getRaiz(), "em_ordem_central.csv");
+
+        // Imprimir log da simulação
+        // logSimulacao.listarPedidos(); // Remover para não imprimir o log completo
     }
 
-    private void processarAutomatizado() {
-        int tempo = 0;
-        Pedido pedido = filaPedidos.desenfileirar();
-
-        while (pedido != null) {
-            tempo += pedido.getTempoPreparo();
-            System.out.println("Pedido processado automaticamente: " + pedido.getCodigo() + " - Tempo de preparo: " + pedido.getTempoPreparo());
-            arvore.adicionar(pedido);
-            pedido = filaPedidos.desenfileirar();
-        }
-    }
-
-    private void pedidoMaisDemorados() {
-        Fila filaAux = filaPedidos.copiar();
-        Fila pedidosMaisDemorados = new Fila();
-        Pedido pedido = filaAux.desenfileirar();
-
-        while (pedido != null) {
-            if (pedido.getTempoPreparo() == maiorTempo) {
-                pedidosMaisDemorados.enfileirar(pedido);
+    private Pedido encontrarPedidoMaisDemorado(ListaDePedidos pedidos) {
+        Pedido pedidoMaisDemorado = null;
+        ListaDePedidos.No atual = pedidos.cabeca;
+        while (atual != null) {
+            if (pedidoMaisDemorado == null || atual.pedido.getTempoPreparo() > pedidoMaisDemorado.getTempoPreparo()) {
+                pedidoMaisDemorado = atual.pedido;
             }
-            pedido = filaAux.desenfileirar();
+            atual = atual.proximo;
         }
-        System.out.println("Pedidos mais demorados: " + pedidosMaisDemorados.toString());
+        return pedidoMaisDemorado;
     }
 
-    private void geraCsvComSituacao(String nomeArquivo) {
-        try (FileWriter writer = new FileWriter(nomeArquivo)) {
-            writer.write("Instante, Fila de Pedidos, Em Produção, Prontos\n");
-            int instante = 0;
-            Pedido pedidoAtual = null;
-            Fila filaCopia = filaPedidos.copiar();
-            Fila filaProntos = new Fila();
-
-            while (!filaCopia.estaVazia() || pedidoAtual != null) {
-                if (pedidoAtual == null && !filaCopia.estaVazia()) {
-                    pedidoAtual = filaCopia.desenfileirar();
-                }
-
-                String filaString = filaCopia.toString();
-                String prontosString = filaProntos.toString();
-                String emProducaoString = (pedidoAtual != null) ? pedidoAtual.toString() : "";
-
-                writer.write(instante + "," + filaString + "," + emProducaoString + "," + prontosString + "\n");
-
-                if (pedidoAtual != null && pedidoAtual.getTempoPreparo() == 0) {
-                    filaProntos.enfileirar(pedidoAtual);
-                    pedidoAtual = null;
-                }
-
-                if (pedidoAtual != null) {
-                    pedidoAtual.setTempoPreparo(pedidoAtual.getTempoPreparo() - 1);
-                }
-
-                instante++;
+    public void simularPasso() {
+        // Processar o pedido atual
+        if (pedidoAtual != null) {
+            pedidoAtual.decrementarTempoRestante();
+            if (pedidoAtual.getTempoRestante() == 0) {
+                abp.inserir(pedidoAtual);
+                System.out.println("Pedido processado e inserido na ABP (instante de tempo = " + tempoAtual + "): " + pedidoAtual.getCodigo());
+                pedidoAtual = null;
             }
+        }
 
-            System.out.println("Arquivo '" + nomeArquivo + "' gerado com sucesso!");
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Adicionar novos pedidos à fila conforme o tempo atual
+        ListaDePedidos.No atual = pedidos.cabeca;
+        while (atual != null) {
+            if (atual.pedido.getInstante() == tempoAtual) {
+                filaPedidos.enfileirar(atual.pedido);
+                System.out.println("Pedido enfileirado (instante de tempo = " + tempoAtual + "): " + atual.pedido.getCodigo());
+            }
+            atual = atual.proximo;
+        }
+
+        // Retirar um novo pedido da fila se o pizzaiolo estiver livre
+        if (pedidoAtual == null && !filaPedidos.estaVazia()) {
+            pedidoAtual = filaPedidos.desenfileirar();
+            System.out.println("Pedido retirado da fila para produção (instante de tempo = " + tempoAtual + "): " + pedidoAtual.getCodigo());
+        }
+
+        registrarLogParaCSV();
+        tempoAtual++;
+        totalTempoExecutado++;
+    }
+
+    public void simularContinuamente() {
+        while (!filaPedidos.estaVazia() || pedidoAtual != null || tempoAtual <= obterUltimoInstante(pedidos)) {
+            simularPasso();
         }
     }
 
-    private void geraCsvCaminhamentoCentral(String nomeArquivo) {
-        try (FileWriter writer = new FileWriter(nomeArquivo)) {
-            arvore.ordemCentralCSV(writer);
-            System.out.println("Arquivo '" + nomeArquivo + "' gerado com sucesso!");
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void registrarLogParaCSV() {
+        StringBuilder log = new StringBuilder();
+        log.append(tempoAtual).append(",");
+
+        // Fila de pedidos
+        FilaDePedidos.No atual = filaPedidos.frente;
+        StringBuilder filaPedidosLog = new StringBuilder();
+        while (atual != null) {
+            filaPedidosLog.append(atual.pedido.getCodigo()).append(" ");
+            atual = atual.proximo;
         }
+        log.append(filaPedidosLog.toString().trim()).append(",");
+
+        // Em produção
+        if (pedidoAtual != null) {
+            log.append(pedidoAtual.getCodigo());
+        }
+        log.append(",");
+
+        // Prontos
+        ListaDePedidos prontos = new ListaDePedidos();
+        abp.emOrdemParaLista(prontos);
+        ListaDePedidos.No noAtual = prontos.cabeca;
+        StringBuilder prontosLog = new StringBuilder();
+        while (noAtual != null) {
+            prontosLog.append(noAtual.pedido.getCodigo()).append(" ");
+            noAtual = noAtual.proximo;
+        }
+        log.append(prontosLog.toString().trim());
+
+        logSimulacao.adicionar(new Pedido(tempoAtual, log.toString(), 0, 0));
+    }
+
+
+
+    private int obterUltimoInstante(ListaDePedidos pedidos) {
+        int ultimoInstante = 0;
+        ListaDePedidos.No atual = pedidos.cabeca;
+        while (atual != null) {
+            if (atual.pedido.getInstante() > ultimoInstante) {
+                ultimoInstante = atual.pedido.getInstante();
+            }
+            atual = atual.proximo;
+        }
+        return ultimoInstante;
     }
 }
-
-
-
-
 

@@ -3,12 +3,14 @@ public class Pedido {
     private String sabor;
     private int instante;
     private int tempoPreparo;
+    private int tempoRestante;
 
     public Pedido(int codigo, String sabor, int instante, int tempoPreparo) {
         this.codigo = codigo;
         this.sabor = sabor;
         this.instante = instante;
         this.tempoPreparo = tempoPreparo;
+        this.tempoRestante = tempoPreparo; // Inicializa o tempo restante com o tempo de preparo
     }
 
     public int getCodigo() {
@@ -27,12 +29,13 @@ public class Pedido {
         return tempoPreparo;
     }
 
-    public void setTempoPreparo(int tempoPreparo) {
-        this.tempoPreparo = tempoPreparo;
+    public int getTempoRestante() {
+        return tempoRestante;
     }
 
-    @Override
-    public String toString() {
-        return codigo + " - " + sabor;
+    public void decrementarTempoRestante() {
+        if (tempoRestante > 0) {
+            tempoRestante--;
+        }
     }
 }
